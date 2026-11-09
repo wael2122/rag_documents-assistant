@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Installer Python et les dépendances
+        run: uv sync --extra dev --python 3.11
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format
+        run: uv run ruff format --check .
+      - name: Typage
+        run: uv run mypy src
+      - name: Tests
+        run: uv run pytest --cov=doc_assistant
+      - name: Jeu de test d'exemple valide
+        run: uv run doc-assistant check-golden-set --path data/eval/golden_set.example.jsonl

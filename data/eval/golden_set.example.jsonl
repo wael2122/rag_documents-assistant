@@ -1,0 +1,3 @@
+{"id": "ex001", "question": "Quel est le chiffre d'affaires consolidé de l'entreprise en 2025 ?", "answer": "<valeur relevée dans le PDF, ex. 12,3 Md€>", "type": "table", "sources": [{"document": "exemple_2025_urd.pdf", "pages": [12]}], "difficulty": "easy", "notes": "Exemple de format : remplace par une vraie question."}
+{"id": "ex002", "question": "Quels sont les trois principaux facteurs de risque cités ?", "answer": "<liste relevée dans le PDF>", "type": "text", "sources": [{"document": "exemple_2025_urd.pdf", "pages": [45, 46]}], "difficulty": "medium"}
+{"id": "ex003", "question": "Quel sera le dividende versé en 2030 ?", "answer": "Information absente du corpus.", "type": "out_of_corpus", "sources": [], "difficulty": "easy"}

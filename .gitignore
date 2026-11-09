@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+
+# Secrets et config locale
+.env
+
+# Données : rapports non redistribuables, artefacts d'ingestion
+data/raw/*
+!data/raw/.gitkeep
+data/processed/
+eval/reports/*.json
+
+# Éditeurs
+.vscode/
+.idea/
+.DS_Store
