@@ -35,3 +35,6 @@ def setup_logging(level: str = "INFO", as_json: bool = True) -> None:
     root = logging.getLogger()
     root.handlers = [handler]
     root.setLevel(level)
+    # Bibliothèques trop bavardes : une ligne par requête HTTP ou par page analysée.
+    for noisy in ("httpx", "httpcore", "docling", "docling_core", "RapidOCR"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)

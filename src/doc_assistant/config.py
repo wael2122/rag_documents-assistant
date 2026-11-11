@@ -29,7 +29,14 @@ class Settings(BaseSettings):
 
     # Chemins
     raw_data_dir: Path = Path("data/raw")
+    processed_dir: Path = Path("data/processed")  # cache des analyses Docling
     golden_set_path: Path = Path("data/eval/golden_set.jsonl")
+
+    # Découpage (en mots)
+    chunk_max_words: int = Field(default=250, gt=0)
+    chunk_overlap_words: int = Field(default=40, ge=0)
+    chunk_max_table_words: int = Field(default=500, gt=0)
+    embedding_batch_size: int = Field(default=32, gt=0)
 
     # Logs
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"

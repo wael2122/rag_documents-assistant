@@ -3,7 +3,7 @@
 Assistant qui répond en français à des questions sur des rapports annuels d'entreprises (texte, tableaux
 et graphiques), cite ses sources page par page et tourne **entièrement en local** (Ollama + GPU).
 
-> Statut : phase 1 — fondations. Les résultats chiffrés seront publiés dans
+> Statut : phase 2 — ingestion. Les résultats chiffrés seront publiés dans
 > [`docs/resultats.md`](docs/resultats.md) à chaque version.
 
 ## Démarrage rapide
@@ -29,6 +29,24 @@ ollama pull bge-m3
 uv run doc-assistant check
 ```
 
+## Ingestion des rapports
+
+```bash
+uv sync --extra dev --extra ingest      # installe Docling (≈ 2 Go la première fois)
+
+# Essai rapide sur quelques pages
+uv run doc-assistant ingest data/raw/totalenergies_2025_urd.pdf --pages 451-460
+
+# Tous les PDF de data/raw (incrémental : un fichier inchangé est ignoré)
+uv run doc-assistant ingest
+
+# Contrôle visuel de chunks tirés au hasard
+uv run doc-assistant inspect --n 10
+```
+
+Au premier lancement, Docling télécharge ses modèles d'analyse de mise en page depuis Hugging Face.
+L'analyse est mise en cache dans `data/processed/`.
+
 ## Structure
 
 ```text
@@ -46,7 +64,8 @@ uv run doc-assistant check
 - [Corpus](docs/corpus.md)
 - [Jeu de test](docs/jeu-de-test.md)
 - Décisions d'architecture : [modèles locaux](docs/adr/0001-modeles-locaux.md),
-  [base vectorielle](docs/adr/0002-base-vectorielle.md)
+  [base vectorielle](docs/adr/0002-base-vectorielle.md),
+  [analyse et découpage](docs/adr/0003-decoupage.md)
 
 ## Qualité
 
