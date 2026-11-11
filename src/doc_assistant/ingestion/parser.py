@@ -10,6 +10,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from doc_assistant.ingestion.cleaning import clean_text, dedupe_label_columns
 from doc_assistant.ingestion.models import Block, BlockKind
 
 if TYPE_CHECKING:
@@ -71,12 +72,12 @@ def to_blocks(doc: "DoclingDocument") -> list[Block]:
             if label == "document_index":
                 # Le sommaire répète les titres de tout le document : du bruit pour la recherche.
                 continue
-            markdown = item.export_to_markdown(doc=doc).strip()
-            caption = item.caption_text(doc).strip() or None
+            markdown = dedupe_label_columns(clean_text(item.export_to_markdown(doc=doc).strip()))
+            caption = clean_text(item.caption_text(doc).strip()) or None
             if markdown:
                 blocks.append(Block(BlockKind.TABLE, markdown, page, caption))
         elif isinstance(item, PictureItem):
-            caption = item.caption_text(doc).strip() or None
+            caption = clean_text(item.caption_text(doc).strip()) or None
             blocks.append(Block(BlockKind.FIGURE, caption or "", page, caption))
         elif isinstance(item, TextItem):
             if label in _SKIPPED_LABELS:
@@ -84,5 +85,5 @@ def to_blocks(doc: "DoclingDocument") -> list[Block]:
             kind = BlockKind.HEADING if label in _HEADING_LABELS else BlockKind.TEXT
             if label not in _HEADING_LABELS | _TEXT_LABELS:
                 logger.debug("étiquette inconnue traitée comme texte", extra={"label": label})
-            blocks.append(Block(kind, item.text, page))
+            blocks.append(Block(kind, clean_text(item.text), page))
     return blocks

@@ -1,6 +1,7 @@
 """Point d'entrée en ligne de commande : `doc-assistant --help`."""
 
 import random
+from collections import Counter
 from pathlib import Path
 from typing import Annotated
 
@@ -10,6 +11,7 @@ from doc_assistant.config import Settings, get_settings
 from doc_assistant.eval.golden_set import GoldenSetError, load_golden_set, type_distribution
 from doc_assistant.health import run_all
 from doc_assistant.ingestion.chunker import ChunkingConfig
+from doc_assistant.ingestion.cleaning import suspicious_chars
 from doc_assistant.logging_setup import setup_logging
 
 app = typer.Typer(help="Assistant documentaire multimodal sur des rapports annuels.")
@@ -73,7 +75,12 @@ def ingest(
         Path | None, typer.Argument(help="Un PDF ou un dossier (défaut : data/raw)")
     ] = None,
     pages: Annotated[str | None, typer.Option(help="Plage de pages pour tester, ex. 1-20")] = None,
-    force: Annotated[bool, typer.Option(help="Réanalyse même si rien n'a changé")] = False,
+    force: Annotated[
+        bool, typer.Option(help="Réindexe même si le PDF n'a pas changé (relit le cache)")
+    ] = False,
+    reparse: Annotated[
+        bool, typer.Option(help="Relance aussi l'analyse Docling, sans le cache (lent)")
+    ] = False,
 ) -> None:
     """Analyse les PDF, les découpe, calcule les embeddings et les stocke en base."""
     from doc_assistant import db
@@ -82,6 +89,9 @@ def ingest(
 
     settings = get_settings()
     target = path or settings.raw_data_dir
+    if not target.exists():
+        typer.echo(f"Introuvable : {target}. Vérifie le nom du fichier dans data/raw.", err=True)
+        raise typer.Exit(code=1)
     pdfs = sorted(target.glob("*.pdf")) if target.is_dir() else [target]
     if not pdfs:
         typer.echo(f"Aucun PDF trouvé dans {target}", err=True)
@@ -104,9 +114,10 @@ def ingest(
                 config=_chunking_config(settings),
                 page_range=_parse_pages(pages),
                 force=force,
+                reparse=reparse,
             )
             if report.status == "skipped":
-                typer.echo("  inchangé, ignoré (utilise --force pour réanalyser)")
+                typer.echo("  inchangé, ignoré (utilise --force pour réindexer)")
             else:
                 typer.echo(f"  {report.n_chunks} chunks indexés en {report.seconds:.0f} s")
 
@@ -143,6 +154,13 @@ def inspect(
     if not rows:
         typer.echo("Aucun chunk en base : lance d'abord `doc-assistant ingest`.")
         raise typer.Exit(code=1)
+
+    odd: Counter[str] = Counter()
+    for row in rows:
+        odd.update(c for c in row[6] if c in suspicious_chars(row[6]))
+    if odd:
+        typer.echo("Caractères inattendus (problème d'encodage possible) :")
+        typer.echo("  " + "  ".join(f"{c!r}×{n}" for c, n in odd.most_common(10)))
     for row in random.Random(seed).sample(rows, min(n, len(rows))):
         cid, filename, p1, p2, section, ctype, content = row
         pages_txt = f"p. {p1}" if p1 == p2 else f"p. {p1}-{p2}"

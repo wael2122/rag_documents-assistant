@@ -20,7 +20,12 @@ infographies, et des en-têtes et pieds de page répétés sur chaque page. Une 
    - chaque tableau est un chunk à part, converti en Markdown et précédé du titre de sa section ;
      au-delà de 500 mots, il est coupé par lignes en répétant l'en-tête ;
    - le sommaire est ignoré (il répète tous les titres et attirerait les recherches).
-3. **Métadonnées** : document, entreprise, exercice, pages de début et de fin, section, type.
+3. **Nettoyage** : normalisation Unicode (ligatures « ﬁ », espaces insécables), réparation de la
+   ligature « fi » mal encodée par certaines polices (« VériŘcations » → « Vérifications »), et
+   suppression de la colonne de libellés dupliquée que Docling produit sur les cellules fusionnées.
+   Les intitulés de section gardent le dernier titre numéroté comme contexte
+   (« 8.3 Résultat global consolidé > TotalEnergies »).
+4. **Métadonnées** : document, entreprise, exercice, pages de début et de fin, section, type.
 
 ## Alternatives écartées pour l'instant
 

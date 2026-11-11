@@ -90,3 +90,34 @@ def test_figures_are_skipped_for_now() -> None:
 def test_invalid_overlap_rejected() -> None:
     with pytest.raises(ValueError):
         ChunkingConfig(max_words=10, overlap_words=10)
+
+
+def test_section_keeps_numbered_parent() -> None:
+    blocks = [
+        heading("8.3 Résultat global consolidé"),
+        heading("TotalEnergies"),
+        Block(BlockKind.TABLE, "| A | B |\n| --- | --- |\n| x | 1 |", 454),
+    ]
+    (chunk,) = chunk_blocks(blocks, CFG)
+    assert chunk.section == "8.3 Résultat global consolidé > TotalEnergies"
+    assert chunk.content.startswith("8.3 Résultat global consolidé > TotalEnergies")
+
+
+def test_isolated_number_joins_next_heading() -> None:
+    blocks = [heading("1.1"), heading("TotalEnergies, en un coup d'œil"), text("contenu")]
+    assert chunk_blocks(blocks, CFG)[0].section == "1.1 TotalEnergies, en un coup d'œil"
+
+
+def test_new_numbered_heading_resets_subsection() -> None:
+    blocks = [
+        heading("8.2 Compte de résultat"),
+        heading("TotalEnergies"),
+        heading("8.4 Bilan consolidé"),
+        text("actif"),
+    ]
+    assert chunk_blocks(blocks, CFG)[0].section == "8.4 Bilan consolidé"
+
+
+def test_year_is_not_a_section_number() -> None:
+    blocks = [heading("3.1 Facteurs de risque"), heading("2025 en bref"), text("x")]
+    assert chunk_blocks(blocks, CFG)[0].section == "3.1 Facteurs de risque > 2025 en bref"

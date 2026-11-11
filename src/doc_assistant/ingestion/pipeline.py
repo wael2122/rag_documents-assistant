@@ -66,15 +66,22 @@ def ingest_file(
     config: ChunkingConfig,
     page_range: tuple[int, int] | None = None,
     force: bool = False,
+    reparse: bool = False,
 ) -> IngestReport:
+    """Indexe un PDF.
+
+    - `force` : réindexe même si le fichier n'a pas changé (le découpage peut avoir changé) ;
+      l'analyse Docling est relue depuis le cache ;
+    - `reparse` : relance aussi l'analyse Docling (lente), en ignorant le cache.
+    """
     start = time.perf_counter()
     sha = file_sha256(path)
     existing = db.get_document(conn, path.name)
     # Ingestion incrémentale : un fichier inchangé n'est pas retraité.
-    if existing and existing.sha256 == sha and not force and page_range is None:
+    if existing and existing.sha256 == sha and not (force or reparse) and page_range is None:
         return IngestReport(path.name, "skipped")
 
-    doc = load_or_convert(path, cache_dir, page_range, force=force)
+    doc = load_or_convert(path, cache_dir, page_range, force=reparse)
     info = parse_filename(path)
     chunks = build_chunks(to_blocks(doc), info, config)
     logger.info("chunks créés", extra={"document": path.name, "n_chunks": len(chunks)})

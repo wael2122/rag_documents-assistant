@@ -40,7 +40,13 @@ uv run doc-assistant ingest data/raw/totalenergies_2025_urd.pdf --pages 451-460
 # Tous les PDF de data/raw (incrémental : un fichier inchangé est ignoré)
 uv run doc-assistant ingest
 
-# Contrôle visuel de chunks tirés au hasard
+# Réindexer après un changement de découpage (relit le cache Docling, rapide)
+uv run doc-assistant ingest --force
+
+# Relancer aussi l'analyse Docling (lent)
+uv run doc-assistant ingest --reparse
+
+# Contrôle visuel de chunks tirés au hasard (signale aussi les caractères suspects)
 uv run doc-assistant inspect --n 10
 ```
 

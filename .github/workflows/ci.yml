@@ -27,8 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      # La version de Python vient de .python-version. Ne pas la forcer ici : sinon `uv run`
+      # recrée l'environnement avec une autre version, sans les outils de développement.
+      # --locked : échoue si uv.lock n'est plus à jour avec pyproject.toml.
       - name: Installer Python et les dépendances
-        run: uv sync --extra dev --python 3.11
+        run: uv sync --locked --extra dev
       - name: Créer le schéma de la base
         run: PGPASSWORD=rag psql -h localhost -U rag -d rag -v ON_ERROR_STOP=1 -f sql/001_init.sql
       - name: Lint

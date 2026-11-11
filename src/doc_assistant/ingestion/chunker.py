@@ -96,9 +96,49 @@ class _TextBuffer:
         return self.new_words == 0
 
 
+# Numéros de section : 1 ou 2 chiffres par niveau (« 8 », « 8.2 », « 3.1.4 »).
+# Une année comme « 2025 » n'en est donc pas un.
+_NUMBERED = re.compile(r"^\d{1,2}(\.\d{1,2})*\.?\s+\S")
+_NUMBER_ONLY = re.compile(r"^\d{1,2}(\.\d{1,2})*\.?$")
+
+
+class _SectionTracker:
+    """Construit un intitulé de section qui garde le dernier titre numéroté comme contexte.
+
+    Exemple : « 8.3 Résultat global consolidé » suivi du sous-titre « TotalEnergies » donne
+    « 8.3 Résultat global consolidé > TotalEnergies ». Un numéro isolé (« 1.1 ») est rattaché
+    au titre qui le suit.
+    """
+
+    def __init__(self) -> None:
+        self.numbered: str | None = None
+        self.current: str | None = None
+        self._pending_number: str | None = None
+
+    def update(self, heading: str) -> None:
+        if _NUMBER_ONLY.match(heading):
+            self._pending_number = heading.rstrip(".")
+            return
+        if self._pending_number:
+            heading = f"{self._pending_number} {heading}"
+            self._pending_number = None
+        if _NUMBERED.match(heading):
+            self.numbered = heading
+            self.current = None
+        else:
+            self.current = heading
+
+    @property
+    def label(self) -> str | None:
+        if self.numbered and self.current:
+            return f"{self.numbered} > {self.current}"
+        return self.current or self.numbered
+
+
 def chunk_blocks(blocks: list[Block], config: ChunkingConfig | None = None) -> list[Chunk]:
     cfg = config or ChunkingConfig()
     chunks: list[Chunk] = []
+    tracker = _SectionTracker()
     section: str | None = None
     buf = _TextBuffer()
 
@@ -129,7 +169,8 @@ def chunk_blocks(blocks: list[Block], config: ChunkingConfig | None = None) -> l
 
         if block.kind is BlockKind.HEADING:
             flush(keep_overlap=False)
-            section = text
+            tracker.update(text)
+            section = tracker.label
             continue
 
         if block.kind is BlockKind.TABLE:

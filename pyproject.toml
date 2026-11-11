@@ -15,6 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Ajoutées au fil des phases pour garder la CI légère.
+# torch et torchvision sont listés explicitement pour que uv prenne la version CUDA sous Windows.
 ingest = ["docling>=2.0", "torch>=2.7", "torchvision>=0.22"]
 retrieval = ["sentence-transformers>=3.0"]
 dev = [
@@ -41,6 +42,8 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+# Typographie française voulue (« », –, ’, espaces insécables) : pas des caractères ambigus.
+ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -59,8 +62,10 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [tool.uv]
+# Copie au lieu de liens physiques : évite les erreurs avec OneDrive sous Windows.
 link-mode = "copy"
 
+# PyTorch avec CUDA 12.8 sous Windows (GPU NVIDIA) ; la version standard ailleurs.
 [[tool.uv.index]]
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
