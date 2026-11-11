@@ -45,5 +45,21 @@ def check_ollama(settings: Settings) -> list[CheckResult]:
     return results
 
 
+def check_gpu() -> CheckResult | None:
+    """PyTorch (utilisé par Docling) voit-il le GPU ? Ignoré si Docling n'est pas installé."""
+    try:
+        import torch
+    except ImportError:
+        return None
+    if torch.cuda.is_available():
+        return CheckResult("GPU (Docling)", True, torch.cuda.get_device_name(0))
+    return CheckResult(
+        "GPU (Docling)",
+        False,
+        f"PyTorch {torch.__version__} tourne sur le processeur : l'analyse des PDF sera lente",
+    )
+
+
 def run_all(settings: Settings) -> list[CheckResult]:
-    return [check_database(settings), *check_ollama(settings)]
+    gpu = check_gpu()
+    return [check_database(settings), *check_ollama(settings), *([gpu] if gpu else [])]

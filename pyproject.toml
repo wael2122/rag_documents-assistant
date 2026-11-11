@@ -52,7 +52,7 @@ plugins = ["pydantic.mypy"]
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["pgvector.*", "docling.*", "docling_core.*"]
+module = ["pgvector.*", "docling.*", "docling_core.*", "torch.*"]
 ignore_missing_imports = true
 # Docling n'est installé qu'avec l'extra « ingest » : même typage avec ou sans lui.
 follow_imports = "skip"

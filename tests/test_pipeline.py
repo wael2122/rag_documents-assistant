@@ -115,3 +115,23 @@ def test_vector_search_finds_stored_chunk(conn: psycopg.Connection, tmp_path: Pa
         "SELECT content_type FROM chunks ORDER BY embedding <=> %s::vector LIMIT 1", (query,)
     ).fetchone()
     assert row is not None
+
+
+@pytest.mark.usefixtures("fake_parsing")
+def test_partial_ingest_does_not_block_full_ingest(
+    conn: psycopg.Connection, tmp_path: Path
+) -> None:
+    pdf = tmp_path / "test_2023_urd.pdf"
+    pdf.write_bytes(b"%PDF-1.4 rapport complet")
+    kwargs = {"cache_dir": tmp_path, "config": ChunkingConfig()}
+
+    partial = ingest_file(pdf, conn, FakeEmbedder(), page_range=(1, 10), **kwargs)  # type: ignore[arg-type]
+    assert partial.status == "ingested"
+
+    # Le fichier n'a pas changé, mais seules 10 pages avaient été indexées : on traite tout.
+    full = ingest_file(pdf, conn, FakeEmbedder(), **kwargs)  # type: ignore[arg-type]
+    assert full.status == "ingested"
+    assert full.parse_seconds >= 0 and full.embed_seconds >= 0 and full.store_seconds >= 0
+
+    # Ensuite seulement, le fichier est considéré comme à jour.
+    assert ingest_file(pdf, conn, FakeEmbedder(), **kwargs).status == "skipped"  # type: ignore[arg-type]

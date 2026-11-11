@@ -34,3 +34,8 @@ def test_duplicated_label_column_is_emptied() -> None:
 def test_identical_numbers_are_never_removed() -> None:
     row = "| 1 550 000 € | 1 550 000 € |"
     assert dedupe_label_columns(row) == row
+
+
+def test_broken_fl_ligature_is_repaired() -> None:
+    assert clean_text("Tableau des řux de trésorerie") == "Tableau des flux de trésorerie"
+    assert clean_text("Řxe et řottant") == "fixe et flottant"

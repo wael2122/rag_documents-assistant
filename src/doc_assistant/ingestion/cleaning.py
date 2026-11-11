@@ -3,10 +3,12 @@
 import re
 import unicodedata
 
-# Certaines polices des rapports encodent la ligature « fi » avec un glyphe que l'extraction
-# décode en « Ř » (ex. « VériŘcations »). Ce caractère n'existe pas en français : on le remplace
-# seulement quand il est collé à une lettre, pour ne pas toucher un « Ř » isolé.
-_BROKEN_FI = re.compile(r"(?<=\w)Ř|Ř(?=\w)")
+# Certaines polices des rapports encodent les ligatures avec des glyphes que l'extraction
+# décode de travers : « Ř » pour « fi » (« VériŘcations ») et « ř » pour « fl » (« řux »).
+# Ces caractères n'existent pas en français : on les remplace seulement quand ils sont collés
+# à une lettre, pour ne pas toucher un caractère isolé.
+_BROKEN_LIGATURES = {"Ř": "fi", "ř": "fl"}
+_BROKEN_LIGATURE = re.compile(r"(?<=\w)[Řř]|[Řř](?=\w)")
 
 # Caractères attendus dans un rapport en français ; les autres sont signalés par `inspect`.
 _EXPECTED = set("àâäçéèêëîïôöùûüÿœæÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ«»’‘“”–—…€£$%°•·×÷±≤≥µ²³½¼¾©®™§¶†‡→←↑↓")
@@ -15,7 +17,7 @@ _EXPECTED = set("àâäçéèêëîïôöùûüÿœæÀÂÄÇÉÈÊËÎÏÔÖÙ�
 def clean_text(text: str) -> str:
     # NFKC décompose les ligatures typographiques (ﬁ → fi, ﬂ → fl) et normalise les espaces.
     text = unicodedata.normalize("NFKC", text)
-    text = _BROKEN_FI.sub("fi", text)
+    text = _BROKEN_LIGATURE.sub(lambda m: _BROKEN_LIGATURES[m.group()], text)
     return text
 
 

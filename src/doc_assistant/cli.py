@@ -119,7 +119,12 @@ def ingest(
             if report.status == "skipped":
                 typer.echo("  inchangé, ignoré (utilise --force pour réindexer)")
             else:
-                typer.echo(f"  {report.n_chunks} chunks indexés en {report.seconds:.0f} s")
+                typer.echo(
+                    f"  {report.n_chunks} chunks indexés en {report.seconds:.0f} s "
+                    f"(analyse {report.parse_seconds:.0f} s, "
+                    f"embeddings {report.embed_seconds:.0f} s, "
+                    f"base {report.store_seconds:.0f} s)"
+                )
 
 
 @app.command()

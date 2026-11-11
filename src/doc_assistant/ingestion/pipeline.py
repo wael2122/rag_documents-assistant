@@ -55,6 +55,9 @@ class IngestReport:
     status: str  # "ingested" | "skipped"
     n_chunks: int = 0
     seconds: float = 0.0
+    parse_seconds: float = 0.0
+    embed_seconds: float = 0.0
+    store_seconds: float = 0.0
 
 
 def ingest_file(
@@ -76,17 +79,24 @@ def ingest_file(
     """
     start = time.perf_counter()
     sha = file_sha256(path)
+    if page_range is not None:
+        # Une ingestion partielle (--pages) reçoit une empreinte différente de celle du fichier :
+        # une ingestion complète ultérieure ne la prendra pas pour un fichier déjà traité.
+        sha = hashlib.sha256(f"{sha}:pages={page_range[0]}-{page_range[1]}".encode()).hexdigest()
     existing = db.get_document(conn, path.name)
     # Ingestion incrémentale : un fichier inchangé n'est pas retraité.
     if existing and existing.sha256 == sha and not (force or reparse) and page_range is None:
         return IngestReport(path.name, "skipped")
 
+    t0 = time.perf_counter()
     doc = load_or_convert(path, cache_dir, page_range, force=reparse)
     info = parse_filename(path)
     chunks = build_chunks(to_blocks(doc), info, config)
+    t1 = time.perf_counter()
     logger.info("chunks créés", extra={"document": path.name, "n_chunks": len(chunks)})
 
     embeddings = embedder.embed([c.content for c in chunks])
+    t2 = time.perf_counter()
     db.replace_document(
         conn,
         filename=path.name,
@@ -97,4 +107,13 @@ def ingest_file(
         chunks=chunks,
         embeddings=embeddings,
     )
-    return IngestReport(path.name, "ingested", len(chunks), time.perf_counter() - start)
+    t3 = time.perf_counter()
+    return IngestReport(
+        path.name,
+        "ingested",
+        len(chunks),
+        seconds=t3 - start,
+        parse_seconds=t1 - t0,
+        embed_seconds=t2 - t1,
+        store_seconds=t3 - t2,
+    )

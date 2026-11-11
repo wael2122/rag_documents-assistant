@@ -24,3 +24,10 @@ def test_embedding_dim_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EMBEDDING_DIM", "4096")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_gpu_check_never_crashes() -> None:
+    from doc_assistant.health import check_gpu
+
+    result = check_gpu()
+    assert result is None or result.name == "GPU (Docling)"
